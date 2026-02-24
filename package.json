@@ -1,0 +1,32 @@
+{
+  "name": "video-frames-mcp",
+  "version": "1.0.0",
+  "description": "MCP server that gives AI the power to extract frames and clips from videos using ffmpeg",
+  "main": "dist/index.js",
+  "bin": {
+    "video-frames-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "keywords": [
+    "mcp",
+    "video",
+    "ffmpeg",
+    "frames"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

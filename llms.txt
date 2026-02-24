@@ -1,0 +1,83 @@
+# video-frames-mcp
+
+## What this is
+An MCP (Model Context Protocol) server that wraps `ffmpeg` and `ffprobe`, giving AI assistants the ability to extract frames, get video metadata, and cut clips from video files. It uses stdio transport and is compatible with any MCP client.
+
+## How to integrate it
+
+### Prerequisites
+- Node.js 18+ must be installed
+- `ffmpeg` must be installed and in PATH (`winget install ffmpeg` on Windows, `brew install ffmpeg` on macOS, `apt install ffmpeg` on Linux)
+
+### Installation
+```bash
+git clone https://github.com/eequaled/frames-mcp
+cd frames-mcp
+npm install
+npm run build
+```
+
+After building, the server entry point is at `dist/index.js` (absolute path required for configs).
+
+### Adding to any MCP client
+The server uses stdio transport. The universal config pattern is:
+```json
+{
+  "mcpServers": {
+    "video-frames": {
+      "command": "node",
+      "args": ["/absolute/path/to/frames-mcp/dist/index.js"]
+    }
+  }
+}
+```
+
+**Cursor**: Settings → Features → MCP → Add New MCP Server → Type: command, Command: `node /absolute/path/to/frames-mcp/dist/index.js`
+
+**Claude Desktop** (`%APPDATA%\Claude\claude_desktop_config.json` on Windows, `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS): Add to `mcpServers` object as shown above.
+
+**Roo Code** (`%APPDATA%\Code\User\globalStorage\roovscode.roo-cline\settings\cline_mcp_settings.json`): Add to `mcpServers` object.
+
+**Cline** (`%APPDATA%\Code\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json`): Add to `mcpServers` object.
+
+## Available Tools
+
+### get_video_info
+Returns metadata about a video file.
+- **Input**: `videoPath` (string, absolute path)
+- **Output**: JSON with `duration` (seconds), `width`, `height`, `fps`, `codec`, `bitrate`, `frameCount`
+- **Example**: "What is the duration and resolution of /path/to/video.mp4?"
+
+### extract_frame
+Extracts a single frame from a video as an image.
+- **Input**: `videoPath` (string), `outputPath` (string, must end in .jpg/.png), `timestamp` (optional, HH:MM:SS or seconds), `frameIndex` (optional, 0-indexed integer)
+- **Output**: Path to the extracted image file
+- **Example**: "Extract the frame at 1:30 from /path/to/video.mp4 and save it to /output/thumb.jpg"
+
+### extract_multiple_frames
+Extracts multiple frames from a video as images.
+- **Input**: `videoPath` (string), `outputDir` (string, directory path), `intervalSeconds` (optional, default 1), `totalFrames` (optional, overrides intervalSeconds), `format` (optional, "jpg" or "png", default "jpg")
+- **Output**: Array of paths to extracted frame images
+- **Example**: "Extract 10 frames evenly distributed from /path/to/video.mp4 into /output/frames/"
+
+### extract_clip
+Cuts a segment from a video without re-encoding (fast, keyframe-aligned).
+- **Input**: `videoPath` (string), `outputPath` (string, must end in a video extension), `startTime` (string, HH:MM:SS or seconds), `endTime` (optional string), `duration` (optional number, seconds). Must provide either `endTime` or `duration`.
+- **Output**: Path to the extracted clip file
+- **Example**: "Cut a 30-second clip starting at 5:00 from /path/to/video.mp4 and save it to /output/clip.mp4"
+
+## Important notes for AI agents
+- **Always use absolute paths** — relative paths will not reliably resolve
+- **Windows paths in JSON**: use double backslashes: `C:\\Users\\you\\video.mp4`
+- The server processes files locally; it does not upload or stream video anywhere
+- Supported video formats: mp4, mkv, avi, mov, webm, flv, wmv, m4v
+- Supported image output formats: jpg, jpeg, png, bmp, webp
+- `extract_clip` uses stream copy (no re-encoding) — cuts snap to the nearest keyframe, so they may be slightly off from the exact timestamp
+- The server will exit with an error if `ffmpeg` is not found on PATH
+
+## Verification
+To verify the server is working, run:
+```bash
+node /path/to/frames-mcp/dist/index.js
+# Server should print: "Video Frames MCP server running..."
+```
