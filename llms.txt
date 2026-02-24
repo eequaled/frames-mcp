@@ -1,7 +1,7 @@
 # video-frames-mcp
 
 ## What this is
-An MCP (Model Context Protocol) server that wraps `ffmpeg` and `ffprobe`, giving AI assistants the ability to extract frames, get video metadata, and cut clips from video files. It uses stdio transport and is compatible with any MCP client.
+An MCP (Model Context Protocol) server that wraps `ffmpeg` and `ffprobe`, giving AI assistants the ability to extract frames, get video metadata, and cut clips from video files. **It returns extracted frames as inline base64 images**, allowing vision-capable models to see the content immediately. It uses stdio transport and is compatible with any MCP client.
 
 ## How to integrate it
 
@@ -67,6 +67,7 @@ Cuts a segment from a video without re-encoding (fast, keyframe-aligned).
 - **Example**: "Cut a 30-second clip starting at 5:00 from /path/to/video.mp4 and save it to /output/clip.mp4"
 
 ## Important notes for AI agents
+- **Inline Image Returns**: `extract_frame` and `extract_multiple_frames` return `ImageContent` blocks (base64) directly. You do not need to read the files manually if your client supports MCP image content.
 - **Always use absolute paths** — relative paths will not reliably resolve
 - **Windows paths in JSON**: use double backslashes: `C:\\Users\\you\\video.mp4`
 - The server processes files locally; it does not upload or stream video anywhere

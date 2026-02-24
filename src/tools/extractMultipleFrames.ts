@@ -6,8 +6,8 @@ import * as fs from "fs";
 export interface ExtractMultipleFramesParams {
     videoPath: string;
     outputDir: string;
-    intervalSeconds?: number; // extract every N seconds
-    totalFrames?: number; // extract N frames evenly distributed
+    intervalSeconds?: number;
+    totalFrames?: number;
     format?: "jpg" | "png";
 }
 
@@ -22,42 +22,29 @@ export async function extractMultipleFrames(
         format = "jpg",
     } = params;
 
-    if (!fileExists(videoPath)) {
-        throw new Error(`Video file not found: ${videoPath}`);
-    }
-    if (!isVideoFile(videoPath)) {
-        throw new Error(`Not a valid video file: ${videoPath}`);
-    }
+    if (!fileExists(videoPath)) throw new Error(`Video file not found: ${videoPath}`);
+    if (!isVideoFile(videoPath)) throw new Error(`Not a valid video file: ${videoPath}`);
 
     ensureDirExists(outputDir);
 
     const outputPattern = path.join(outputDir, `frame_%04d.${format}`);
-    const args: string[] = ["-hide_banner", "-loglevel", "error", "-y"];
-
-    args.push("-i", videoPath);
+    const args: string[] = ["-hide_banner", "-loglevel", "error", "-y", "-i", videoPath];
 
     if (totalFrames) {
-        // Option A: Use fps-based approach with video duration obtained via ffprobe
-        const probeArgs = ["-v", "quiet", "-print_format", "json", "-show_format", videoPath];
-        const probeOutput = await runFfprobe(probeArgs);
-        const probeData = JSON.parse(probeOutput);
-        const duration = parseFloat(probeData.format.duration);
-        const fps = totalFrames / duration;
+        const probeData = JSON.parse(
+            await runFfprobe(["-v", "quiet", "-print_format", "json", "-show_format", videoPath])
+        );
+        const fps = totalFrames / parseFloat(probeData.format.duration);
         args.push("-vf", `fps=${fps}`);
     } else {
-        // Extract every N seconds
         args.push("-vf", `fps=1/${intervalSeconds}`);
     }
 
     args.push(outputPattern);
-
     await runFfmpeg(args);
 
-    // Return list of created files
-    const files = fs.readdirSync(outputDir)
+    return fs.readdirSync(outputDir)
         .filter((f) => f.startsWith("frame_") && f.endsWith(`.${format}`))
         .map((f) => path.join(outputDir, f))
         .sort();
-
-    return files;
 }

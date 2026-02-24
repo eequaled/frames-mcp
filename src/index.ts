@@ -1,8 +1,18 @@
 #!/usr/bin/env node
 
+import { readFile } from "fs/promises";
+import { extname } from "path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+
+function mimeFromExt(filePath: string): string {
+    const ext = extname(filePath).toLowerCase();
+    if (ext === ".png") return "image/png";
+    if (ext === ".webp") return "image/webp";
+    if (ext === ".bmp") return "image/bmp";
+    return "image/jpeg";
+}
 
 import { extractFrame } from "./tools/extractFrame.js";
 import { extractMultipleFrames } from "./tools/extractMultipleFrames.js";
@@ -43,15 +53,20 @@ server.registerTool(
             timestamp: args.timestamp,
             frameIndex: args.frameIndex,
         });
+
+        const imageBuffer = await readFile(result);
+        const base64Data = imageBuffer.toString("base64");
+        const mime = mimeFromExt(result);
+
         return {
             content: [
                 { type: "text" as const, text: `Frame extracted successfully: ${result}` },
+                { type: "image" as const, data: base64Data, mimeType: mime },
             ],
         };
     }
 );
 
-// --- Tool: extract_multiple_frames ---
 server.registerTool(
     "extract_multiple_frames",
     {
@@ -86,18 +101,34 @@ server.registerTool(
             totalFrames: args.totalFrames,
             format: args.format,
         });
-        return {
-            content: [
+
+        const content: Array<
+            | { type: "text"; text: string }
+            | { type: "image"; data: string; mimeType: string }
+        > = [
                 {
                     type: "text" as const,
                     text: `Extracted ${results.length} frames:\n${results.join("\n")}`,
                 },
-            ],
-        };
+            ];
+
+        for (const framePath of results) {
+            try {
+                const buf = await readFile(framePath);
+                content.push({
+                    type: "image" as const,
+                    data: buf.toString("base64"),
+                    mimeType: mimeFromExt(framePath),
+                });
+            } catch {
+                // If a frame file can't be read, skip it silently
+            }
+        }
+
+        return { content };
     }
 );
 
-// --- Tool: get_video_info ---
 server.registerTool(
     "get_video_info",
     {
@@ -117,7 +148,6 @@ server.registerTool(
     }
 );
 
-// --- Tool: extract_clip ---
 server.registerTool(
     "extract_clip",
     {
@@ -162,7 +192,6 @@ server.registerTool(
     }
 );
 
-// --- Main startup ---
 async function main() {
     const hasFfmpeg = await checkFfmpeg();
     if (!hasFfmpeg) {

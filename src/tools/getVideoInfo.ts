@@ -6,7 +6,7 @@ interface FfprobeStream {
     codec_name: string;
     width?: number;
     height?: number;
-    r_frame_rate: string;
+    r_frame_rate: string; // format: "30/1" or "30000/1001"
     nb_frames?: string;
 }
 
@@ -19,7 +19,7 @@ interface FfprobeOutput {
 }
 
 export interface VideoInfo {
-    duration: number; // in seconds
+    duration: number;
     width: number;
     height: number;
     fps: number;
@@ -29,22 +29,16 @@ export interface VideoInfo {
 }
 
 export async function getVideoInfo(videoPath: string): Promise<VideoInfo> {
-    if (!fileExists(videoPath)) {
-        throw new Error(`Video file not found: ${videoPath}`);
-    }
-    if (!isVideoFile(videoPath)) {
-        throw new Error(`Not a valid video file: ${videoPath}`);
-    }
+    if (!fileExists(videoPath)) throw new Error(`Video file not found: ${videoPath}`);
+    if (!isVideoFile(videoPath)) throw new Error(`Not a valid video file: ${videoPath}`);
 
-    const args = [
+    const output = await runFfprobe([
         "-v", "quiet",
         "-print_format", "json",
         "-show_format",
         "-show_streams",
         videoPath,
-    ];
-
-    const output = await runFfprobe(args);
+    ]);
 
     let data: FfprobeOutput;
     try {
@@ -53,20 +47,12 @@ export async function getVideoInfo(videoPath: string): Promise<VideoInfo> {
         throw new Error("Failed to parse ffprobe output");
     }
 
-    // Find video stream
-    const videoStream = data.streams.find(
-        (s) => s.codec_type === "video"
-    );
+    const videoStream = data.streams.find((s) => s.codec_type === "video");
+    if (!videoStream) throw new Error("No video stream found");
 
-    if (!videoStream) {
-        throw new Error("No video stream found");
-    }
+    const [num, den] = videoStream.r_frame_rate.split("/");
+    const fps = parseInt(num, 10) / parseInt(den, 10);
 
-    // Parse fps (usually in format "30/1" or "30000/1001")
-    const fpsRatio = videoStream.r_frame_rate.split("/");
-    const fps = parseInt(fpsRatio[0], 10) / parseInt(fpsRatio[1], 10);
-
-    // Fallback calculation for frameCount if nb_frames is missing
     return {
         duration: parseFloat(data.format.duration),
         width: videoStream.width || 0,
@@ -74,6 +60,7 @@ export async function getVideoInfo(videoPath: string): Promise<VideoInfo> {
         fps: Math.round(fps * 100) / 100,
         codec: videoStream.codec_name,
         bitrate: parseInt(data.format.bit_rate || "0", 10),
+        // nb_frames not always present; fall back to duration * fps
         frameCount: videoStream.nb_frames
             ? parseInt(videoStream.nb_frames, 10)
             : Math.floor(parseFloat(data.format.duration) * fps),
