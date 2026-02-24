@@ -212,6 +212,4 @@ Combined with your AI's vision capabilities, this MCP unlocks:
 
 ---
 
-## 📄 License
 
-ISC
