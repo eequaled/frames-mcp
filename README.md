@@ -2,8 +2,12 @@
 
 > **1-Liner:** Give your AI agents eyes: Extract visual context from local videos for Claude, Cursor, and Windsurf.
 
+[![GitHub stars](https://img.shields.io/github/stars/eequaled/frames-mcp.svg?style=social&label=Star)](https://github.com/eequaled/frames-mcp/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/eequaled/frames-mcp.svg?style=social&label=Fork)](https://github.com/eequaled/frames-mcp/network/members)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![npm version](https://badge.fury.io/js/%40eequaled%2Fframes-mcp.svg)](https://badge.fury.io/js/%40eequaled%2Fframes-mcp)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue.svg)](https://modelcontextprotocol.io)
+[![100% Local](https://img.shields.io/badge/%F0%9F%94%92_100%25_Local-%26_Private-success)](#)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue.svg)](https://modelcontextprotocol.io)
 [![100% Local](https://img.shields.io/badge/%F0%9F%94%92_100%25_Local-%26_Private-success)](#)
 
