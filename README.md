@@ -5,11 +5,17 @@
 [![GitHub stars](https://img.shields.io/github/stars/eequaled/frames-mcp.svg?style=social&label=Star)](https://github.com/eequaled/frames-mcp/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/eequaled/frames-mcp.svg?style=social&label=Fork)](https://github.com/eequaled/frames-mcp/network/members)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![npm version](https://badge.fury.io/js/%40eequaled%2Fframes-mcp.svg)](https://badge.fury.io/js/%40eequaled%2Fframes-mcp)
+[![npm version](https://img.shields.io/npm/v/%40eequaled%2Fframes-mcp)](https://www.npmjs.com/package/@eequaled/frames-mcp)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue.svg)](https://modelcontextprotocol.io)
 [![100% Local](https://img.shields.io/badge/%F0%9F%94%92_100%25_Local-%26_Private-success)](#)
 
 This is an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server that bridges AI coding assistants with `ffmpeg`, enabling them to work with video files directly from chat.
+
+<p align="center">
+  <video src="https://github.com/eequaled/frames-mcp/raw/main/media/demo.mp4" width="720" controls autoplay muted loop>
+    Your browser does not support the video tag.
+  </video>
+</p>
 
 ---
 
