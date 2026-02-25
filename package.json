@@ -4,7 +4,7 @@
   "description": "MCP server that gives AI the power to extract frames and clips from videos using ffmpeg",
   "main": "dist/index.js",
   "bin": {
-    "frames-mcp": "./dist/index.js"
+    "frames-mcp": "dist/index.js"
   },
   "files": [
     "dist"
