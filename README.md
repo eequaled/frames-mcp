@@ -8,8 +8,6 @@
 [![npm version](https://badge.fury.io/js/%40eequaled%2Fframes-mcp.svg)](https://badge.fury.io/js/%40eequaled%2Fframes-mcp)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue.svg)](https://modelcontextprotocol.io)
 [![100% Local](https://img.shields.io/badge/%F0%9F%94%92_100%25_Local-%26_Private-success)](#)
-[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue.svg)](https://modelcontextprotocol.io)
-[![100% Local](https://img.shields.io/badge/%F0%9F%94%92_100%25_Local-%26_Private-success)](#)
 
 This is an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server that bridges AI coding assistants with `ffmpeg`, enabling them to work with video files directly from chat.
 
@@ -42,9 +40,9 @@ Your video files never leave your machine. Frame extraction, OCR, and clipping h
 
 ## ⚙️ How It Works
 
-All processing happens **locally on your machine** using `ffmpeg` and `ffprobe`. The server communicates via **stdio** transport — the standard MCP protocol. Your AI sends a tool call, the server runs the ffmpeg command, and returns the result.
+All processing happens **locally on your machine** using `ffmpeg`, `ffprobe`, and `tesseract.js` for OCR. The server communicates via **stdio** transport — the standard MCP protocol. Your AI sends a tool call, the server runs the command, and returns the result (and text, if applicable).
 
-- `extract_frame` → `ffmpeg -ss <timestamp> -i video.mp4 -frames:v 1 output.jpg`
+- `extract_frame` → `ffmpeg -ss <timestamp> -i video.mp4 -frames:v 1 output.jpg` + **OCR Processing**
 - `extract_multiple_frames` → `ffmpeg -vf fps=N/duration video.mp4 output_%04d.jpg`
 - `get_video_info` → `ffprobe -print_format json -show_streams -show_format video.mp4`
 - `extract_clip` → `ffmpeg -ss <start> -to <end> -c copy video.mp4 clip.mp4`
@@ -147,8 +145,8 @@ Open the Roo Code MCP settings panel, or edit the file directly:
 {
   "mcpServers": {
     "video-frames": {
-      "command": "node",
-      "args": ["/absolute/path/to/frames-mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "@eequaled/frames-mcp"]
     }
   }
 }
@@ -168,8 +166,8 @@ Edit the Cline MCP settings file:
 {
   "mcpServers": {
     "video-frames": {
-      "command": "node",
-      "args": ["/absolute/path/to/frames-mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "@eequaled/frames-mcp"]
     }
   }
 }
