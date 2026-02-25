@@ -11,11 +11,7 @@
 
 This is an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server that bridges AI coding assistants with `ffmpeg`, enabling them to work with video files directly from chat.
 
-<p align="center">
-  <video src="https://github.com/eequaled/frames-mcp/raw/main/media/demo.mp4" width="720" controls autoplay muted loop>
-    Your browser does not support the video tag.
-  </video>
-</p>
+https://github.com/user-attachments/assets/8493da1c-1c2a-42d4-87ee-40cead242eb2
 
 ---
 
