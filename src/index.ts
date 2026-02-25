@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
-import { readFile } from "fs/promises";
-import { extname } from "path";
+import { readFile, mkdtemp, rm, unlink } from "fs/promises";
+import { extname, join } from "path";
+import { tmpdir } from "os";
+import { createWorker } from "tesseract.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -35,7 +37,8 @@ server.registerTool(
             videoPath: z.string().describe("Absolute path to the video file"),
             outputPath: z
                 .string()
-                .describe("Absolute path for the output image (.jpg or .png)"),
+                .optional()
+                .describe("Absolute path for the output image (.jpg or .png). If omitted, a temporary file will be used and deleted after."),
             timestamp: z
                 .string()
                 .optional()
@@ -47,9 +50,18 @@ server.registerTool(
         }),
     },
     async (args) => {
+        let actualOutputPath = args.outputPath;
+        let isTemporary = false;
+
+        if (!actualOutputPath) {
+            const fileName = `frame_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;
+            actualOutputPath = join(tmpdir(), fileName);
+            isTemporary = true;
+        }
+
         const result = await extractFrame({
             videoPath: args.videoPath,
-            outputPath: args.outputPath,
+            outputPath: actualOutputPath,
             timestamp: args.timestamp,
             frameIndex: args.frameIndex,
         });
@@ -58,9 +70,34 @@ server.registerTool(
         const base64Data = imageBuffer.toString("base64");
         const mime = mimeFromExt(result);
 
+        let extractedText = "";
+        try {
+            const worker = await createWorker("eng");
+            const ret = await worker.recognize(imageBuffer);
+            extractedText = ret.data.text.trim();
+            await worker.terminate();
+        } catch (error) {
+            console.error("OCR failed:", error);
+        }
+
+        if (isTemporary) {
+            await unlink(result).catch(() => { });
+        }
+
+        const textResponse = isTemporary
+            ? "Frame extracted successfully (temporary file cleaned up)"
+            : `Frame extracted successfully: ${result}`;
+
+        const finalResponseText = extractedText
+            ? `${textResponse}\n\n[OCR Extracted Text]:\n${extractedText}`
+            : textResponse;
+
         return {
             content: [
-                { type: "text" as const, text: `Frame extracted successfully: ${result}` },
+                {
+                    type: "text" as const,
+                    text: finalResponseText
+                },
                 { type: "image" as const, data: base64Data, mimeType: mime },
             ],
         };
@@ -76,7 +113,8 @@ server.registerTool(
             videoPath: z.string().describe("Absolute path to the video file"),
             outputDir: z
                 .string()
-                .describe("Directory where extracted frames will be saved"),
+                .optional()
+                .describe("Directory where extracted frames will be saved. If omitted, a temporary directory will be used and deleted after."),
             intervalSeconds: z
                 .number()
                 .optional()
@@ -94,9 +132,17 @@ server.registerTool(
         }),
     },
     async (args) => {
+        let actualOutputDir = args.outputDir;
+        let isTemporary = false;
+
+        if (!actualOutputDir) {
+            actualOutputDir = await mkdtemp(join(tmpdir(), "mcp-frames-"));
+            isTemporary = true;
+        }
+
         const results = await extractMultipleFrames({
             videoPath: args.videoPath,
-            outputDir: args.outputDir,
+            outputDir: actualOutputDir,
             intervalSeconds: args.intervalSeconds,
             totalFrames: args.totalFrames,
             format: args.format,
@@ -108,7 +154,9 @@ server.registerTool(
         > = [
                 {
                     type: "text" as const,
-                    text: `Extracted ${results.length} frames:\n${results.join("\n")}`,
+                    text: isTemporary
+                        ? `Extracted ${results.length} frames (temporary files cleaned up)`
+                        : `Extracted ${results.length} frames:\n${results.join("\n")}`,
                 },
             ];
 
@@ -123,6 +171,10 @@ server.registerTool(
             } catch {
                 // If a frame file can't be read, skip it silently
             }
+        }
+
+        if (isTemporary) {
+            await rm(actualOutputDir, { recursive: true, force: true }).catch(() => { });
         }
 
         return { content };

@@ -1,6 +1,11 @@
 # 🎞️ Video Frames MCP
 
-> Give your AI the ability to **see inside any video** — extract frames, inspect metadata, and cut clips — all powered by `ffmpeg`.
+> **1-Liner:** Give your AI agents eyes: Extract visual context from local videos for Claude, Cursor, and Windsurf.
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![npm version](https://badge.fury.io/js/%40eequaled%2Fframes-mcp.svg)](https://badge.fury.io/js/%40eequaled%2Fframes-mcp)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue.svg)](https://modelcontextprotocol.io)
+[![100% Local](https://img.shields.io/badge/%F0%9F%94%92_100%25_Local-%26_Private-success)](#)
 
 This is an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server that bridges AI coding assistants with `ffmpeg`, enabling them to work with video files directly from chat.
 
@@ -10,10 +15,24 @@ This is an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) serve
 
 | Tool | Description |
 |------|-------------|
-| `extract_frame` | Extract a single image at any timestamp or frame index |
-| `extract_multiple_frames` | Batch-extract frames at set intervals or evenly distributed |
+| `extract_frame` | Extract a single image (returns base64 & **OCR text**; path optional) |
+| `extract_multiple_frames` | Batch-extract frames (returns base64; directory optional) |
 | `get_video_info` | Get duration, resolution, FPS, codec, and frame count |
-| `extract_clip` | Cut a video segment between two timestamps without re-encoding |
+| `extract_clip` | Cut a video segment (path required) |
+
+---
+
+## 🧠 Smart Features
+
+- **Built-in OCR (`extract_frame`)**: The server automatically runs Optical Character Recognition using `tesseract.js` on extracted frames and returns the text directly to your AI. Perfect for reading error messages or slide content in videos.
+- **Smart Sampling (`extract_multiple_frames`)**: Don't dump a frame for every second and blow up your token context. Ask for `totalFrames: 10`, and the server will perfectly divide the video to return 10 evenly distributed frames capturing the whole timeline.
+- **Transient Mode**: If you omit output paths for frames, the server saves them to a system temp folder, reads them to base64, and immediately deletes them. Zero clutter.
+
+---
+
+## 🔒 100% Local & Private
+
+Your video files never leave your machine. Frame extraction, OCR, and clipping happen entirely locally. This makes it safe for corporate environments, NDAs, and private recordings.
 
 ---
 
@@ -51,15 +70,11 @@ Verify it works: `ffmpeg -version`
 ## 🚀 Installation
 
 ```bash
-git clone https://github.com/eequaled/frames-mcp
-cd frames-mcp
-npm install
-npm run build
+npx -y @eequaled/frames-mcp
 ```
+*(Alternatively, you can clone and build from source).*
 
-Note the **absolute path** to your `dist/index.js` after building — you'll need it in the config below. Example:
-- Windows: `C:\Users\you\frames-mcp\dist\index.js`
-- macOS/Linux: `/home/you/frames-mcp/dist/index.js`
+The `npx` command automatically fetches the latest version from NPM.
 
 ---
 
@@ -71,15 +86,15 @@ For clients that use a `config.json` structure (Cursor, Claude, Roo Code, Cline,
 {
   "mcpServers": {
     "video-frames": {
-      "command": "node",
-      "args": ["E:/coding-tries-ig/GitHub/frames-mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "@eequaled/frames-mcp"]
     }
   }
 }
 ```
 
 > [!IMPORTANT]
-> Change the path above to be the **absolute path** to where you cloned the repository on your machine. On Windows, use forward slashes `/` or double backslashes `\\`.
+> If you cloned from GitHub instead of using `npx`, change the command to `node` and the args to the **absolute path** of your local `dist/index.js`.
 
 ---
 
@@ -92,7 +107,7 @@ For clients that use a `config.json` structure (Cursor, Claude, Roo Code, Cline,
 3. Fill in:
    - **Name**: `video-frames`
    - **Type**: `command`
-   - **Command**: `node /absolute/path/to/frames-mcp/dist/index.js`
+   - **Command**: `npx -y @eequaled/frames-mcp`
 4. Save and wait for the **green dot** (Connected)
 
 ---
@@ -107,8 +122,8 @@ Edit your config file:
 {
   "mcpServers": {
     "video-frames": {
-      "command": "node",
-      "args": ["/absolute/path/to/frames-mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "@eequaled/frames-mcp"]
     }
   }
 }
@@ -164,8 +179,8 @@ Open **Settings** → **MCP** → **Add Server** and fill in:
 
 ```json
 {
-  "command": "node",
-  "args": ["/absolute/path/to/frames-mcp/dist/index.js"]
+  "command": "npx",
+  "args": ["-y", "@eequaled/frames-mcp"]
 }
 ```
 
@@ -178,17 +193,17 @@ Any MCP-compatible tool (Open Interpreter, custom scripts, etc.) can connect usi
 | Parameter | Value |
 |-----------|-------|
 | **Transport** | `stdio` |
-| **Command** | `node` |
-| **Args** | `["/absolute/path/to/frames-mcp/dist/index.js"]` |
+| **Command** | `npx` |
+| **Args** | `["-y", "@eequaled/frames-mcp"]` |
 
 You can also test it directly in your terminal:
 
 ```bash
 # Smoke test — should print the running message
-node dist/index.js
+npx -y @eequaled/frames-mcp
 
 # Send a raw JSON-RPC list request
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node dist/index.js
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | npx -y @eequaled/frames-mcp
 ```
 
 ---
@@ -204,10 +219,13 @@ What's the duration and resolution of /path/to/video.mp4?
 Extract the frame at 1:30 from /path/to/video.mp4 and save it to /output/thumb.jpg
 ```
 ```
-Get 10 frames evenly distributed from /path/to/video.mp4 and save them to /output/frames/
+Check this video and tell me the moment the error message appears.
 ```
 ```
-Cut a 30-second clip starting at 5:00 from /path/to/video.mp4 and save it to /output/clip.mp4
+Summarize the UI changes in this screen recording.
+```
+```
+Extract the text from the slide at 02:45.
 ```
 
 > **Tip:** Always use **absolute paths** (e.g., `C:\Videos\movie.mp4` or `/home/user/movie.mp4`). Relative paths won't reliably resolve.
